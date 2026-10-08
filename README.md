@@ -154,6 +154,29 @@ Giá đầu: pet full $80 (+pet $70), watercolor $40 / full $60 (+pet $30 / $55,
 
 ## Publish và giới hạn còn lại
 
+### Deploy trực tiếp bằng Cloudflare Workers Builds (GitHub)
+
+Project chạy **Vinext/Vite**, không build bằng Next/OpenNext. Log ngày 2026-10-08 cho thấy lệnh deploy `npx wrangler deploy` chạy khi chưa có output, tự nhận Next.js rồi gọi OpenNext migrate. Migration định nâng Wrangler lên 4.148.0 nhưng workers-types đang pin 4.20260515.1, gây `ERESOLVE`. Không sửa bằng `--force` hoặc đổi dependencies theo OpenNext; dùng output Worker có sẵn của Vinext.
+
+Trong Cloudflare Workers Builds:
+
+- Root directory: root của repo GitHub (repo đã chứa nội dung `site/` tại root; không đặt root là `site`).
+- Build command: `npm run build`.
+- Deploy command: `npm run deploy:cloudflare`.
+- Output thực tế: `dist/server/index.js` và `dist/client/`, không phải `.next` và không dùng Pages static-only cho API này.
+- Build variables: `CF_D1_DATABASE_ID` là UUID database thật, `CF_R2_BUCKET_NAME` là tên bucket R2 đã tạo trong tài khoản deploy. Tên Worker là `alwaysalele-portfolio`; logical bindings giữ `DB` và `BUCKET`.
+
+`scripts/deploy-cloudflare.mjs` đọc output `dist/server/wrangler.json`, tạo `dist/server/wrangler.cloudflare.json` với tên Worker và storage thật rồi chạy Wrangler đã pin trong dependencies. Script dừng rõ ràng khi thiếu build/storage, không chạy framework autodetection/migration. Không thay manifest hoặc binding của bản Sites; output `dist/` ignored.
+
+Sau khi tạo D1/R2 và trước khi nhận commission, áp dụng migrations vào database Cloudflare riêng (không dùng DB placeholder local):
+
+```powershell
+# Sau build và sau khi deploy script đã tạo wrangler.cloudflare.json:
+npx wrangler d1 migrations apply DB --remote --config dist/server/wrangler.cloudflare.json
+```
+
+Chạy `npm run deploy:cloudflare -- --dry-run` để kiểm tra package Worker mà không upload; vẫn cần variables hợp lệ. Deployment trực tiếp không tự áp dụng migrations và không có access policy private của Sites. Chưa xác nhận deployment thật hoặc provisioning storage trong tài khoản Cloudflare riêng.
+
 Khi cần publish, dùng Sites workflow theo skill hosting của môi trường, giữ project ID và binding hiện có. Workflow chuẩn bị source Git, build còn thiếu, tạo archive rồi gọi native save/deploy; chỉ coi deployment hoàn tất khi status `succeeded` trả URL. Credential lấy mới khi cần, chỉ giữ trong memory/stdin, không chép vào README, source hoặc shell history.
 
 Không tự đổi audience private thành public. Trước khi dùng site nhận khách thật cần xác định cách chủ project đọc/xử lý đơn và liên hệ khách: hiện chưa có admin dashboard, email thông báo, báo giá, cập nhật trạng thái hoặc thanh toán. API chưa có idempotency chống duplicate submission, rate limiting hay spam protection đầy đủ; cần xử lý khi mở công khai. Receipt lookup chỉ chứng minh đơn đã lưu, chưa phải tracking quy trình sản xuất.
@@ -202,3 +225,10 @@ WebMCP feature-detect trong browser: `list_commission_services` đọc catalog; 
 
 - Đã push commit ứng dụng `a9c2b3f` lên `origin/main`; GitHub remote trả đúng SHA trùng HEAD khi kiểm tra lại. Commit dùng email `lv.quang.98.vp@gmail.com`.
 - Commit tài liệu tiếp theo ghi kết quả xác nhận này; không đổi code hoặc chạy lại các kiểm tra đã pass. Bản hosted Cloudflare/Sites chưa được deploy lại.
+
+### 2026-10-08 — Sửa đường deploy Cloudflare trực tiếp
+
+- Đọc log build người dùng gửi, xác định Wrangler autodetection gọi OpenNext trước khi Vinext được build; xung đột dependencies là lỗi phát sinh từ đường chuyển đổi đó.
+- Thêm `scripts/deploy-cloudflare.mjs` và npm script `deploy:cloudflare`, chỉ deploy output Vinext và yêu cầu D1/R2 thật qua build variables. Cập nhật hướng dẫn Cloudflare Build/Deploy và migrations trong README.
+- Đã kiểm tra: build, TypeScript và Wrangler `--dry-run` thành công với UUID/bucket fixture chỉ dùng dry-run; không upload hoặc provision tài nguyên. Kiểm tra thiếu D1 variable dừng rõ ràng trước deploy cũng pass. Không dùng fixture cho deploy thật.
+- Chưa có D1 database UUID/bucket của tài khoản deploy do người dùng cung cấp. Không deploy thật hoặc tự tạo storage trong task này; cần cập nhật settings trên Cloudflare rồi chạy lại.
