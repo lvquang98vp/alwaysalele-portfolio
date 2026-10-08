@@ -12,10 +12,10 @@ if (process.argv.slice(2).some(arg => arg !== '--dry-run')) {
 }
 const databaseId = process.env.CF_D1_DATABASE_ID?.trim();
 const bucketName = process.env.CF_R2_BUCKET_NAME?.trim();
-if (!databaseId || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(databaseId) || databaseId === '00000000-0000-4000-8000-000000000000') {
+if (databaseId && (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(databaseId) || databaseId === '00000000-0000-4000-8000-000000000000')) {
   throw new Error('Set CF_D1_DATABASE_ID to the real D1 database UUID in Cloudflare build variables. Do not use the local preview placeholder.');
 }
-if (!bucketName || !/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(bucketName)) {
+if (bucketName && !/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(bucketName)) {
   throw new Error('Set CF_R2_BUCKET_NAME to an existing R2 bucket name in your Cloudflare account.');
 }
 let config;
@@ -23,8 +23,11 @@ try { config = JSON.parse(await readFile(configUrl, 'utf8')); }
 catch { throw new Error('Vinext build output is missing. Run npm run build before deploying.'); }
 config.name = 'alwaysalele-portfolio';
 config.topLevelName = config.name;
-config.d1_databases = [{ binding: 'DB', database_name: 'alwaysalele-commissions', database_id: databaseId, migrations_dir: '../../drizzle' }];
-config.r2_buckets = [{ binding: 'BUCKET', bucket_name: bucketName }];
+config.d1_databases = databaseId ? [{ binding: 'DB', database_name: 'alwaysalele-commissions', database_id: databaseId, migrations_dir: '../../drizzle' }] : [];
+config.r2_buckets = bucketName ? [{ binding: 'BUCKET', bucket_name: bucketName }] : [];
+if (!databaseId || !bucketName) {
+  console.warn('Deploying portfolio without complete commission storage. Commission requests require both DB (D1) and BUCKET (R2), plus D1 migrations, before they can be saved.');
+}
 // Keep main, assets, compatibility flags and module rules from the Vite build.
 await writeFile(outputUrl, JSON.stringify(config, null, 2) + '\n');
 const args = [fileURLToPath(new URL('node_modules/wrangler/bin/wrangler.js', root)), 'deploy', '--config', fileURLToPath(outputUrl), ...(dryRun ? ['--dry-run'] : [])];

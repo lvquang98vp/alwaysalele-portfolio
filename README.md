@@ -164,9 +164,9 @@ Trong Cloudflare Workers Builds:
 - Build command: `npm run build`.
 - Deploy command: `npm run deploy:cloudflare`.
 - Output thực tế: `dist/server/index.js` và `dist/client/`, không phải `.next` và không dùng Pages static-only cho API này.
-- Build variables: `CF_D1_DATABASE_ID` là UUID database thật, `CF_R2_BUCKET_NAME` là tên bucket R2 đã tạo trong tài khoản deploy. Tên Worker là `alwaysalele-portfolio`; logical bindings giữ `DB` và `BUCKET`.
+- Build variables là tùy chọn khi đưa portfolio lên lần đầu: `CF_D1_DATABASE_ID` là UUID database thật, `CF_R2_BUCKET_NAME` là tên bucket R2 đã tạo trong tài khoản deploy. Chưa có biến thì script bỏ binding tương ứng khỏi deploy config, không dùng placeholder local. Để lưu commission cần cả hai binding và migration. Tên Worker là `alwaysalele-portfolio`; logical bindings giữ `DB` và `BUCKET`.
 
-`scripts/deploy-cloudflare.mjs` đọc output `dist/server/wrangler.json`, tạo `dist/server/wrangler.cloudflare.json` với tên Worker và storage thật rồi chạy Wrangler đã pin trong dependencies. Script dừng rõ ràng khi thiếu build/storage, không chạy framework autodetection/migration. Không thay manifest hoặc binding của bản Sites; output `dist/` ignored.
+`scripts/deploy-cloudflare.mjs` đọc output `dist/server/wrangler.json`, tạo `dist/server/wrangler.cloudflare.json` với tên Worker và storage thật rồi chạy Wrangler đã pin trong dependencies. Script dừng khi thiếu build hoặc khi storage variable được cung cấp nhưng không hợp lệ. Thiếu storage variable chỉ cảnh báo và vẫn deploy portfolio, không chạy framework autodetection/migration. Không thay manifest hoặc binding của bản Sites; output `dist/` ignored.
 
 Sau khi tạo D1/R2 và trước khi nhận commission, áp dụng migrations vào database Cloudflare riêng (không dùng DB placeholder local):
 
@@ -175,7 +175,7 @@ Sau khi tạo D1/R2 và trước khi nhận commission, áp dụng migrations v�
 npx wrangler d1 migrations apply DB --remote --config dist/server/wrangler.cloudflare.json
 ```
 
-Chạy `npm run deploy:cloudflare -- --dry-run` để kiểm tra package Worker mà không upload; vẫn cần variables hợp lệ. Deployment trực tiếp không tự áp dụng migrations và không có access policy private của Sites. Chưa xác nhận deployment thật hoặc provisioning storage trong tài khoản Cloudflare riêng.
+Chạy `npm run deploy:cloudflare -- --dry-run` để kiểm tra package Worker mà không upload; có thể chạy không có storage variables; nếu cung cấp thì giá trị phải hợp lệ. Deployment trực tiếp không tự áp dụng migrations và không có access policy private của Sites. Chưa xác nhận deployment thật hoặc provisioning storage trong tài khoản Cloudflare riêng.
 
 Khi cần publish, dùng Sites workflow theo skill hosting của môi trường, giữ project ID và binding hiện có. Workflow chuẩn bị source Git, build còn thiếu, tạo archive rồi gọi native save/deploy; chỉ coi deployment hoàn tất khi status `succeeded` trả URL. Credential lấy mới khi cần, chỉ giữ trong memory/stdin, không chép vào README, source hoặc shell history.
 
@@ -232,3 +232,9 @@ WebMCP feature-detect trong browser: `list_commission_services` đọc catalog; 
 - Thêm `scripts/deploy-cloudflare.mjs` và npm script `deploy:cloudflare`, chỉ deploy output Vinext và yêu cầu D1/R2 thật qua build variables. Cập nhật hướng dẫn Cloudflare Build/Deploy và migrations trong README.
 - Đã kiểm tra: build, TypeScript và Wrangler `--dry-run` thành công với UUID/bucket fixture chỉ dùng dry-run; không upload hoặc provision tài nguyên. Kiểm tra thiếu D1 variable dừng rõ ràng trước deploy cũng pass. Không dùng fixture cho deploy thật.
 - Chưa có D1 database UUID/bucket của tài khoản deploy do người dùng cung cấp. Không deploy thật hoặc tự tạo storage trong task này; cần cập nhật settings trên Cloudflare rồi chạy lại.
+
+### 2026-10-08 — Cho phép deploy portfolio trước khi nối storage
+
+- Log mới xác nhận build thành công nhưng script deploy dừng vì thiếu D1 variable. Đổi `scripts/deploy-cloudflare.mjs` để D1/R2 optional cho lần tạo Worker đầu; thiếu biến sẽ bỏ binding local khỏi config và cảnh báo. Giá trị sai vẫn bị từ chối.
+- Không mô phỏng lưu đơn: API commission hiện trả lỗi storage 503 và giữ form khi chưa có đủ DB/BUCKET. Cần nối storage và áp dụng migration trước khi nhận commission.
+- Kiểm tra: Wrangler dry-run không có variables và kiểm tra generated config không chứa D1/R2 placeholder; trường hợp variables sai được kiểm tra riêng. Chưa xác nhận deployment thật trong tài khoản Cloudflare người dùng.
