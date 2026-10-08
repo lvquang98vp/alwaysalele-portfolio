@@ -23,7 +23,7 @@ Tài liệu chính để người phát triển hoặc AI ở cuộc trò chuy�
 - Người dùng đã yêu cầu **không xây đăng nhập và nhắn tin**. Không tự thêm lại các tính năng này.
 - Tính năng **đặt commission riêng** trên website: lưu yêu cầu và ảnh tham chiếu thực sự.
 - Đã xóa các link Twitter, Instagram, TikTok khỏi sidebar.
-- Có tab **Contact** cạnh **Portfolio**. Email chưa được cung cấp, hiển thị `Contact email coming soon.`. Không tự đặt email giả hoặc thêm mailto khi chưa có địa chỉ.
+- Có tab **Contact** cạnh **Portfolio**. Email người dùng đã cung cấp: `alwaysalelecats@gmail.com`, có link `mailto:`. Đây là email liên hệ portfolio, khác email tác giả Git.
 - Người dùng đang xem và thử bản **local**. Các thay đổi local không tự đồng nghĩa với thay đổi bản hosted.
 
 ## Trạng thái hiện tại
@@ -32,7 +32,7 @@ Tài liệu chính để người phát triển hoặc AI ở cuộc trò chuy�
 | --- | --- |
 | Commissions | 7 dịch vụ, nhóm PETS / Other, giá USD, slideshow, chi tiết và terms |
 | Portfolio | 9 tác phẩm, gallery, lọc tag/commission, chi tiết và chuyển ảnh |
-| Contact | Đã có trên local; email chờ người dùng gửi |
+| Contact | Email `alwaysalelecats@gmail.com`, có link mở ứng dụng email |
 | Lưu dịch vụ / thích tranh | Lưu trên thiết bị qua localStorage; không đồng bộ tài khoản |
 | Đặt commission | 3 bước: Customize → Your details → Review; lưu qua API |
 | Biên nhận | Request ID, khóa riêng, file TXT tải xuống và tra cứu yêu cầu |
@@ -61,7 +61,7 @@ Thông tin profile, badge, review và mức giá được lấy từ trang ngu�
 
 - GitHub repository: https://github.com/lvquang98vp/alwaysalele-portfolio
 - Remote `origin`: `https://github.com/lvquang98vp/alwaysalele-portfolio.git`; `remote.pushDefault=origin`.
-- Email tác giả commit bắt buộc cho project: `lv.quang.98.vp@gmail.com`, cấu hình bằng `git config --local user.email`. Đây là email Git, **không phải email Contact của portfolio**.
+- Email tác giả commit bắt buộc cho project: `lv.quang.98.vp@gmail.com`, cấu hình bằng `git config --local user.email`. Đây là email Git, **không phải email Contact của portfolio** (`alwaysalelecats@gmail.com`).
 - Trước khi commit/push, kiểm tra `git config user.email` và `git remote -v`. Không sửa Git config global hoặc rewrite lịch sử cũ chỉ để đổi email.
 - Email commit không quyết định tài khoản đăng nhập GitHub; push vẫn cần credentials có quyền trên repository. Cấu hình remote chưa chứng minh đã push thành công.
 - Remote GitHub riêng với repository hosting do Sites quản lý; giữ project ID và luồng publish Sites khi dùng hosting hiện có.
@@ -185,7 +185,7 @@ WebMCP feature-detect trong browser: `list_commission_services` đọc catalog; 
 
 ## Việc tiếp theo đã biết
 
-- Chờ email contact từ người dùng; thay placeholder bằng địa chỉ thật và mailto, rồi cập nhật README.
+- Email Contact đã được cung cấp và tích hợp. Theo dõi kết quả Cloudflare deployment sau push; không coi push là xác nhận deploy thành công.
 - Nếu người dùng yêu cầu, publish thay đổi Contact/social cùng các sửa tiếp theo.
 - Chỉ xây quản trị đơn, thanh toán, email hoặc tính năng khác khi được yêu cầu; không tự thêm đăng nhập/nhắn tin.
 
@@ -238,3 +238,9 @@ WebMCP feature-detect trong browser: `list_commission_services` đọc catalog; 
 - Log mới xác nhận build thành công nhưng script deploy dừng vì thiếu D1 variable. Đổi `scripts/deploy-cloudflare.mjs` để D1/R2 optional cho lần tạo Worker đầu; thiếu biến sẽ bỏ binding local khỏi config và cảnh báo. Giá trị sai vẫn bị từ chối.
 - Không mô phỏng lưu đơn: API commission hiện trả lỗi storage 503 và giữ form khi chưa có đủ DB/BUCKET. Cần nối storage và áp dụng migration trước khi nhận commission.
 - Kiểm tra: Wrangler dry-run không có variables và kiểm tra generated config không chứa D1/R2 placeholder; trường hợp variables sai được kiểm tra riêng. Chưa xác nhận deployment thật trong tài khoản Cloudflare người dùng.
+
+### 2026-10-08 — Thêm email Contact
+
+- Theo yêu cầu người dùng, thay placeholder bằng `alwaysalelecats@gmail.com`, thêm link mailto và nút Email me, đổi icon email sang Mail trong `app/page.tsx`.
+- Cập nhật README và rule để không còn ghi email đang chờ. Email Git vẫn là `lv.quang.98.vp@gmail.com`.
+- Kiểm tra TypeScript pass, HTTP local trả 200; kiểm tra source có 2 link mailto đúng và không còn placeholder. Contact render theo tab client-side nên không xác nhận bằng HTML response ban đầu. Thay đổi được chuẩn bị để commit/push `origin/main`; deployment Cloudflare do hệ thống build thực hiện sau push, chưa được xác nhận ở task này.
