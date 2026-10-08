@@ -197,3 +197,8 @@ WebMCP feature-detect trong browser: `list_commission_services` đọc catalog; 
 - Bỏ theo dõi file cache TypeScript `tsconfig.tsbuildinfo` và thêm `*.tsbuildinfo` vào `.gitignore`; không xóa cache local.
 - Đã chạy TypeScript và build thành công. Kiểm tra các file đang tracked không tìm thấy file env/PEM/archive hoặc token theo các mẫu đã kiểm tra. Không coi đây là kiểm toán bảo mật đầy đủ.
 - Push chỉ được coi hoàn tất sau khi remote main khớp HEAD; kết quả sẽ ghi ở mục xác nhận sau khi push. Không deploy Cloudflare trong task này.
+
+### 2026-10-08 — Xác nhận push GitHub
+
+- Đã push commit ứng dụng `a9c2b3f` lên `origin/main`; GitHub remote trả đúng SHA trùng HEAD khi kiểm tra lại. Commit dùng email `lv.quang.98.vp@gmail.com`.
+- Commit tài liệu tiếp theo ghi kết quả xác nhận này; không đổi code hoặc chạy lại các kiểm tra đã pass. Bản hosted Cloudflare/Sites chưa được deploy lại.
